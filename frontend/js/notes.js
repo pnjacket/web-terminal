@@ -29,7 +29,7 @@ export class NoteEditor {
         }
         return;
       }
-    } catch (_) {}
+    } catch {}
     this.data = { tabs: [], activeTabId: null };
     this._createTab();
   }

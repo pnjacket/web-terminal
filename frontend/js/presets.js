@@ -60,7 +60,7 @@ export class PresetPopup {
     try {
       const resp = await fetch('/api/presets');
       if (resp.ok) store = await resp.json();
-    } catch (_) {}
+    } catch {}
 
     itemsEl.innerHTML = '';
     const recentIds = (store.recentlyUsed || []).slice(0, 10);
@@ -124,7 +124,7 @@ export class PresetEditor {
     try {
       const resp = await fetch('/api/presets');
       if (resp.ok) store = await resp.json();
-    } catch (_) {}
+    } catch {}
 
     this._presets = store.presets || [];
     this._recentlyUsed = store.recentlyUsed || [];

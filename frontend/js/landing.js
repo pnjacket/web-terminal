@@ -17,7 +17,7 @@ async function loadSessions() {
     if (resp.ok) {
       sessions = await resp.json();
     }
-  } catch (_) {}
+  } catch {}
 
   tbody.innerHTML = '';
 

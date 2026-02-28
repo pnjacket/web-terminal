@@ -53,7 +53,7 @@ async function loadStatus() {
         renderStatusBar(session);
       }
     }
-  } catch (_) {
+  } catch {
     // Non-fatal
   }
 }
@@ -99,7 +99,7 @@ ws.onmessage = (event) => {
   let msg;
   try {
     msg = JSON.parse(event.data);
-  } catch (_) {
+  } catch {
     return;
   }
 

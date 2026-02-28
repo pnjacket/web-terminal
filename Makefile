@@ -4,7 +4,7 @@ XTERM_WEBLINKS_VERSION := 0.11.0
 
 UNPKG := https://unpkg.com
 
-.PHONY: run build copy-frontend vendor-frontend vendor-codemirror docker-build docker-up docker-down tidy clean test test-backend test-frontend
+.PHONY: run build copy-frontend vendor-frontend vendor-codemirror docker-build docker-up docker-down tidy clean test test-backend test-frontend lint lint-backend lint-frontend
 
 test: test-backend test-frontend
 
@@ -13,6 +13,14 @@ test-backend:
 
 test-frontend:
 	cd frontend && npm test
+
+lint: lint-backend lint-frontend
+
+lint-backend:
+	cd backend && golangci-lint run ./...
+
+lint-frontend:
+	cd frontend && npm run lint
 
 run:
 	PRESET_FILE=./data/presets.json go -C backend run -tags dev .
