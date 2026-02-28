@@ -5,10 +5,19 @@ import (
 	"log"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/creack/pty"
 	"github.com/go-chi/chi/v5"
 	"github.com/gorilla/websocket"
+)
+
+const (
+	// pingInterval is how often the server sends a WebSocket ping frame.
+	// Must be less than pongWait and less than any reverse-proxy idle timeout.
+	pingInterval = 30 * time.Second
+	// pongWait is how long the server waits for a pong response before closing.
+	pongWait = 60 * time.Second
 )
 
 var upgrader = websocket.Upgrader{
@@ -36,6 +45,13 @@ func (h *handler) handleWS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer conn.Close()
+
+	// Configure ping/pong keepalive so the connection survives reverse-proxy
+	// idle timeouts. The client browser responds to pings automatically.
+	conn.SetReadDeadline(time.Now().Add(pongWait)) //nolint:errcheck
+	conn.SetPongHandler(func(string) error {
+		return conn.SetReadDeadline(time.Now().Add(pongWait))
+	})
 
 	// Serialise all WebSocket writes — gorilla/websocket forbids concurrent writes.
 	var writeMu sync.Mutex
@@ -91,6 +107,26 @@ func (h *handler) handleWS(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 	defer close(connDone)
+
+	// Goroutine: send periodic pings to keep the connection alive through
+	// reverse-proxy idle timeouts.
+	go func() {
+		ticker := time.NewTicker(pingInterval)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				writeMu.Lock()
+				err := conn.WriteMessage(websocket.PingMessage, nil)
+				writeMu.Unlock()
+				if err != nil {
+					return
+				}
+			case <-connDone:
+				return
+			}
+		}
+	}()
 
 	// Main loop: read client messages.
 	for {

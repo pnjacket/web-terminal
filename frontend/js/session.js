@@ -14,6 +14,7 @@ if (!sessionId) {
 }
 
 const statusBar = document.getElementById('status-bar');
+const disconnectedOverlay = document.getElementById('ws-disconnected');
 
 function renderStatusBar(session) {
   const statusDot = session.connected
@@ -67,72 +68,113 @@ const container = document.getElementById('terminal-container');
 const adapter = new TerminalAdapter();
 adapter.attach(container);
 
-// Build WebSocket URL
-const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-const wsUrl = `${proto}//${window.location.host}/api/sessions/${sessionId}/ws`;
-const ws = new WebSocket(wsUrl);
+// Track the current terminal size so we can resend it after a reconnect.
+let lastSize = null;
+
+// Register adapter event callbacks once — outside connect() to avoid
+// accumulating duplicate xterm.js listeners on every reconnect.
+adapter.onResize((cols, rows) => {
+  lastSize = { cols, rows };
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: 'resize', cols, rows }));
+  }
+});
+
+adapter.onData((text) => {
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: 'input', data: btoa(text) }));
+  }
+});
 
 window.getSessionName = () => currentSessionName;
 
 window.pasteToTerminal = (text) => {
-  if (ws.readyState === WebSocket.OPEN) {
+  if (ws && ws.readyState === WebSocket.OPEN) {
     ws.send(JSON.stringify({ type: 'input', data: btoa(unescape(encodeURIComponent(text))) }));
   }
 };
 
-ws.onopen = () => {
-  // Send initial resize once terminal is ready
-  adapter.onResize((cols, rows) => {
-    if (ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({ type: 'resize', cols, rows }));
-    }
-  });
+// WebSocket with auto-reconnect
+let ws = null;
+let reconnectAttempts = 0;
+let hasConnectedOnce = false;
+const MAX_RECONNECT = 10;
 
-  adapter.onData((text) => {
-    if (ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({ type: 'input', data: btoa(text) }));
-    }
-  });
-};
+function connect() {
+  const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  ws = new WebSocket(`${proto}//${window.location.host}/api/sessions/${sessionId}/ws`);
 
-ws.onmessage = (event) => {
-  let msg;
-  try {
-    msg = JSON.parse(event.data);
-  } catch {
+  ws.onopen = () => {
+    reconnectAttempts = 0;
+    disconnectedOverlay.style.display = 'none';
+    // On reconnect, clear the terminal before scrollback replay to avoid
+    // duplicating content that is already on screen.
+    if (hasConnectedOnce) {
+      adapter.write('\x1b[H\x1b[2J\x1b[3J');
+    }
+    hasConnectedOnce = true;
+    // Resend current terminal size so the PTY matches after reconnect.
+    if (lastSize) {
+      ws.send(JSON.stringify({ type: 'resize', cols: lastSize.cols, rows: lastSize.rows }));
+    }
+  };
+
+  ws.onmessage = (event) => {
+    let msg;
+    try {
+      msg = JSON.parse(event.data);
+    } catch {
+      return;
+    }
+
+    if (msg.type === 'output') {
+      const binary = atob(msg.data);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      adapter.write(bytes);
+    } else if (msg.type === 'closed') {
+      sessionEnded = true;
+      document.getElementById('session-ended').style.display = 'flex';
+      adapter.dispose();
+    }
+  };
+
+  ws.onclose = () => {
+    if (!sessionEnded && !pageUnloading) {
+      scheduleReconnect();
+    }
+  };
+
+  ws.onerror = (err) => {
+    console.error('WebSocket error:', err);
+  };
+}
+
+function scheduleReconnect() {
+  if (reconnectAttempts >= MAX_RECONNECT) {
+    disconnectedOverlay.querySelector('p').textContent = 'Connection lost';
+    disconnectedOverlay.querySelector('.session-ended-sub').textContent =
+      'Could not reconnect to server.';
+    disconnectedOverlay.querySelector('.btn').style.display = '';
+    disconnectedOverlay.style.display = 'flex';
     return;
   }
 
-  if (msg.type === 'output') {
-    // Decode base64 output and write to terminal
-    const binary = atob(msg.data);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) {
-      bytes[i] = binary.charCodeAt(i);
-    }
-    adapter.write(bytes);
-  } else if (msg.type === 'closed') {
-    sessionEnded = true;
-    document.getElementById('session-ended').style.display = 'flex';
-    adapter.dispose();
-  }
-};
+  const delay = Math.min(1000 * (2 ** reconnectAttempts), 10000);
+  reconnectAttempts++;
 
-ws.onclose = () => {
-  if (!sessionEnded && !pageUnloading) {
-    adapter.dispose();
-    document.getElementById('ws-disconnected').style.display = 'flex';
-  }
-};
+  disconnectedOverlay.querySelector('p').textContent = 'Reconnecting\u2026';
+  disconnectedOverlay.querySelector('.session-ended-sub').textContent =
+    `Attempt ${reconnectAttempts}\u2009/\u2009${MAX_RECONNECT}`;
+  disconnectedOverlay.querySelector('.btn').style.display = 'none';
+  disconnectedOverlay.style.display = 'flex';
 
-ws.onerror = (err) => {
-  console.error('WebSocket error:', err);
-};
+  setTimeout(connect, delay);
+}
 
-window.addEventListener('beforeunload', () => {
-  pageUnloading = true;
-  ws.close();
-});
+connect();
 
 // Resizable split
 const resizer = document.getElementById('resizer');
@@ -160,4 +202,9 @@ resizer.addEventListener('mousedown', (e) => {
 
   document.addEventListener('mousemove', onMouseMove);
   document.addEventListener('mouseup', onMouseUp);
+});
+
+window.addEventListener('beforeunload', () => {
+  pageUnloading = true;
+  if (ws) ws.close();
 });
