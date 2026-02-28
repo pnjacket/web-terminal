@@ -185,6 +185,12 @@ web-terminal/
 
 ---
 
+## License
+
+This project is licensed under the [MIT License](LICENSE). See the [NOTICE](NOTICE) file for the copyright and license texts of all third-party components.
+
+---
+
 ## Architecture
 
 - **Backend**: Go binary using [chi](https://github.com/go-chi/chi) for routing, [gorilla/websocket](https://github.com/gorilla/websocket) for WebSocket, and [creack/pty](https://github.com/creack/pty) for PTY management. One `bash --login` process per session.

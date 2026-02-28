@@ -41,7 +41,7 @@ vendor-codemirror:
 	  npm init -y >/dev/null 2>&1 && \
 	  npm install esbuild @codemirror/state @codemirror/view @codemirror/commands @codemirror/language @codemirror/lang-markdown @codemirror/theme-one-dark @codemirror/search @codemirror/language-data >/dev/null 2>&1 && \
 	  printf 'export * from \"@codemirror/state\";\nexport * from \"@codemirror/view\";\nexport * from \"@codemirror/commands\";\nexport * from \"@codemirror/language\";\nexport * from \"@codemirror/lang-markdown\";\nexport * from \"@codemirror/theme-one-dark\";\nexport * from \"@codemirror/search\";\nexport { languages } from \"@codemirror/language-data\";' > /build/cm-entry.js && \
-	  ./node_modules/.bin/esbuild /build/cm-entry.js --bundle --format=iife --global-name=CM --minify-whitespace --minify-syntax --outfile=/out/codemirror.bundle.js"
+	  ./node_modules/.bin/esbuild /build/cm-entry.js --bundle --format=iife --global-name=CM --minify-whitespace --minify-syntax --legal-comments=inline --outfile=/out/codemirror.bundle.js"
 
 docker-build:
 	docker build -t web-terminal .
