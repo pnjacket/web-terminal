@@ -20,7 +20,7 @@ jobs:
           cache-dependency-path: backend/go.sum
 
       - name: Run tests
-        run: go -C backend test ./...
+        run: go -C backend test -tags dev ./...
 
   frontend:
     name: Frontend tests
