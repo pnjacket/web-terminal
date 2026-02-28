@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Web Terminal</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header class="header">
+    <h1 class="header-title">Web Terminal</h1>
+    <div class="header-actions">
+      <button id="presets-btn" class="btn">Presets</button>
+      <button id="new-session-btn" class="btn btn-primary">+ New Session</button>
+    </div>
+  </header>
+
+  <main class="main">
+    <div id="empty-state" class="empty-state" style="display:none;">
+      <p>No active sessions.</p>
+      <p>Click <strong>+ New Session</strong> to get started.</p>
+    </div>
+
+    <table class="sessions-table" id="sessions-table">
+      <thead>
+        <tr>
+          <th>NAME</th>
+          <th>CREATED</th>
+          <th>LAST ACTIVE</th>
+          <th>STATUS</th>
+          <th>ACTIONS</th>
+        </tr>
+      </thead>
+      <tbody id="sessions-tbody"></tbody>
+    </table>
+  </main>
+
+  <!-- New Session Modal -->
+  <div id="modal" class="modal-overlay" style="display:none;">
+    <div class="modal-box">
+      <h2 class="modal-title">New Session</h2>
+      <input
+        type="text"
+        id="modal-input"
+        class="modal-input"
+        placeholder="Session name"
+        maxlength="64"
+        autocomplete="off"
+      >
+      <p id="modal-error" class="modal-error"></p>
+      <div class="modal-actions">
+        <button id="modal-cancel" class="btn">Cancel</button>
+        <button id="modal-create" class="btn btn-primary">Create</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/vendor/codemirror.bundle.js"></script>
+  <script type="module" src="/js/landing.js"></script>
+</body>
+</html>

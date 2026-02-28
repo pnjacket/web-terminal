@@ -1,0 +1,29 @@
+# Go binary
+backend/web-terminal
+dist/
+
+# Go build/test cache
+*.test
+*.out
+
+# Backend static (copied from frontend for embedding)
+backend/static/
+
+# Node modules
+frontend/node_modules/
+
+# Vitest results
+frontend/node_modules/.vite/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Docker volume data (if mounted locally)
+data/

@@ -1,0 +1,10 @@
+{
+  "presets": [
+    {
+      "id": "bbeb0281-88d3-4940-b1a7-05184be78746",
+      "title": "Feature Initiation",
+      "content": "I would like to implement a new feature as following.\n- Analyze and create a plan to implement it.\n- Ask questions to refine and gather more requirements.\n- Take extra care finding edge cases that may not be clearly explained in this document.\n- Create a comprehensive plan as the output"
+    }
+  ],
+  "recentlyUsed": []
+}

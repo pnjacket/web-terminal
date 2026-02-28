@@ -1,0 +1,14 @@
+services:
+  web-terminal:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - PRESET_FILE=/data/presets.json
+    volumes:
+      - presets_data:/data
+
+volumes:
+  presets_data:
