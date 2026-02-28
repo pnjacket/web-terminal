@@ -17,7 +17,7 @@ test-frontend:
 lint: lint-backend lint-frontend
 
 lint-backend:
-	cd backend && golangci-lint run ./...
+	cd backend && $$(command -v golangci-lint || echo "$$(go env GOPATH)/bin/golangci-lint") run --build-tags dev ./...
 
 lint-frontend:
 	cd frontend && npm run lint

@@ -13,7 +13,7 @@ import (
 func (h *handler) listSessions(w http.ResponseWriter, r *http.Request) {
 	sessions := h.manager.List()
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(sessions)
+	_ = json.NewEncoder(w).Encode(sessions)
 }
 
 func (h *handler) createSession(w http.ResponseWriter, r *http.Request) {
@@ -37,7 +37,7 @@ func (h *handler) createSession(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(s)
+	_ = json.NewEncoder(w).Encode(s)
 }
 
 func (h *handler) killSession(w http.ResponseWriter, r *http.Request) {
