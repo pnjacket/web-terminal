@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"web-terminal/api"
 	"web-terminal/preset"
@@ -31,7 +32,12 @@ func main() {
 
 	addr := fmt.Sprintf(":%s", port)
 	log.Printf("web-terminal listening on %s", addr)
-	if err := http.ListenAndServe(addr, router); err != nil {
+	srv := &http.Server{
+		Addr:              addr,
+		Handler:           router,
+		ReadHeaderTimeout: 30 * time.Second,
+	}
+	if err := srv.ListenAndServe(); err != nil {
 		log.Fatalf("server error: %v", err)
 	}
 }

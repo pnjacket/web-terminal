@@ -67,7 +67,7 @@ func serveFile(fsys fs.FS, name string) http.HandlerFunc {
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
-		w.Write(content)
+		_, _ = w.Write(content)
 	}
 }
 

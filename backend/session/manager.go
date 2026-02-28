@@ -128,7 +128,7 @@ func (m *Manager) Kill(id string) error {
 	}
 
 	if s.cmd != nil && s.cmd.Process != nil {
-		s.cmd.Process.Kill()
+		_ = s.cmd.Process.Kill()
 	}
 	if s.ptmx != nil {
 		s.ptmx.Close()

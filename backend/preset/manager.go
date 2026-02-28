@@ -128,7 +128,7 @@ func (m *Manager) writeAtomic(store PresetStore) error {
 	if err != nil {
 		return err
 	}
-	if err := os.WriteFile(tmp, data, 0644); err != nil {
+	if err := os.WriteFile(tmp, data, 0600); err != nil {
 		return err
 	}
 	return os.Rename(tmp, m.filePath)

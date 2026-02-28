@@ -82,7 +82,10 @@ func TestPutPresetsFiltersRecentlyUsed(t *testing.T) {
 	body := `{"presets":[{"id":"p1","title":"A","content":""}],"recentlyUsed":["p1","ghost"]}`
 	req, _ := http.NewRequest(http.MethodPut, srv.URL+"/api/presets", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
-	putResp, _ := http.DefaultClient.Do(req)
+	putResp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("PUT /api/presets: %v", err)
+	}
 	defer putResp.Body.Close()
 
 	var store preset.PresetStore

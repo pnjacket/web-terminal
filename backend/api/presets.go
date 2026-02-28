@@ -12,7 +12,7 @@ import (
 func (h *handler) getPresets(w http.ResponseWriter, r *http.Request) {
 	store := h.presetManager.Get()
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(store)
+	_ = json.NewEncoder(w).Encode(store)
 }
 
 func (h *handler) putPresets(w http.ResponseWriter, r *http.Request) {
@@ -42,7 +42,7 @@ func (h *handler) putPresets(w http.ResponseWriter, r *http.Request) {
 
 	updated := h.presetManager.Get()
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(updated)
+	_ = json.NewEncoder(w).Encode(updated)
 }
 
 func (h *handler) usePreset(w http.ResponseWriter, r *http.Request) {
@@ -55,5 +55,5 @@ func (h *handler) usePreset(w http.ResponseWriter, r *http.Request) {
 
 	store := h.presetManager.Get()
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string][]string{"recentlyUsed": store.RecentlyUsed})
+	_ = json.NewEncoder(w).Encode(map[string][]string{"recentlyUsed": store.RecentlyUsed})
 }
