@@ -7,6 +7,8 @@ const sessionId = pathParts[pathParts.length - 1];
 let currentSessionName = sessionId;
 let sessionEnded = false;
 let pageUnloading = false;
+let wsState = 'connected';   // 'connected' | 'reconnecting' | 'disconnected'
+let lastSession = null;
 
 if (!sessionId) {
   document.body.textContent = 'Invalid session URL.';
@@ -14,12 +16,22 @@ if (!sessionId) {
 }
 
 const statusBar = document.getElementById('status-bar');
-const disconnectedOverlay = document.getElementById('ws-disconnected');
 
 function renderStatusBar(session) {
-  const statusDot = session.connected
-    ? '<span class="dot dot-connected" title="Connected">&#9679;</span> connected'
-    : '<span class="dot dot-idle" title="Idle">&#9679;</span> idle';
+  lastSession = session;
+
+  let statusDot;
+  if (wsState === 'connected') {
+    statusDot = '<span class="dot dot-connected" title="Connected">&#9679;</span> connected';
+  } else if (wsState === 'reconnecting') {
+    statusDot = '<span class="dot dot-reconnecting" title="Reconnecting">&#9679;</span> reconnecting\u2026';
+  } else {
+    statusDot = '<span class="dot dot-disconnected" title="Disconnected">&#9679;</span> disconnected';
+  }
+
+  const reconnectBtn = wsState === 'disconnected'
+    ? '<button class="btn btn-primary" id="status-reconnect-btn">Reconnect</button>'
+    : '';
 
   statusBar.innerHTML = `
     <div class="status-bar-meta">
@@ -31,8 +43,17 @@ function renderStatusBar(session) {
       <span class="status-bar-sep">|</span>
       <span>${statusDot}</span>
     </div>
-    <button class="btn btn-danger" id="status-kill-btn">Kill</button>
+    <div style="display:flex;align-items:center;gap:6px">
+      ${reconnectBtn}
+      <button class="btn btn-danger" id="status-kill-btn">Kill</button>
+    </div>
   `;
+
+  if (wsState === 'disconnected') {
+    document.getElementById('status-reconnect-btn').addEventListener('click', () => {
+      location.reload();
+    });
+  }
 
   document.getElementById('status-kill-btn').addEventListener('click', async () => {
     await fetch(`/api/sessions/${sessionId}`, { method: 'DELETE' });
@@ -40,6 +61,11 @@ function renderStatusBar(session) {
     // Fallback: if tab wasn't opened by script, navigate home
     setTimeout(() => { window.location.href = '/'; }, 200);
   });
+}
+
+function setWsState(state) {
+  wsState = state;
+  if (lastSession) renderStatusBar(lastSession);
 }
 
 async function loadStatus() {
@@ -106,7 +132,7 @@ function connect() {
 
   ws.onopen = () => {
     reconnectAttempts = 0;
-    disconnectedOverlay.style.display = 'none';
+    setWsState('connected');
     // On reconnect, clear the terminal before scrollback replay to avoid
     // duplicating content that is already on screen.
     if (hasConnectedOnce) {
@@ -154,22 +180,13 @@ function connect() {
 
 function scheduleReconnect() {
   if (reconnectAttempts >= MAX_RECONNECT) {
-    disconnectedOverlay.querySelector('p').textContent = 'Connection lost';
-    disconnectedOverlay.querySelector('.session-ended-sub').textContent =
-      'Could not reconnect to server.';
-    disconnectedOverlay.querySelector('.btn').style.display = '';
-    disconnectedOverlay.style.display = 'flex';
+    setWsState('disconnected');
     return;
   }
 
   const delay = Math.min(1000 * (2 ** reconnectAttempts), 10000);
   reconnectAttempts++;
-
-  disconnectedOverlay.querySelector('p').textContent = 'Reconnecting\u2026';
-  disconnectedOverlay.querySelector('.session-ended-sub').textContent =
-    `Attempt ${reconnectAttempts}\u2009/\u2009${MAX_RECONNECT}`;
-  disconnectedOverlay.querySelector('.btn').style.display = 'none';
-  disconnectedOverlay.style.display = 'flex';
+  setWsState('reconnecting');
 
   setTimeout(connect, delay);
 }

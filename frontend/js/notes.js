@@ -38,6 +38,14 @@ export class NoteEditor {
     localStorage.setItem(this.storageKey, JSON.stringify(this.data));
   }
 
+  _debouncedSave() {
+    clearTimeout(this._saveTimer);
+    this._saveTimer = setTimeout(() => {
+      this._saveCurrentContent();
+      this._save();
+    }, 500);
+  }
+
   _formatTimestamp(date) {
     const y = date.getFullYear();
     const mo = String(date.getMonth() + 1).padStart(2, '0');
@@ -101,6 +109,11 @@ export class NoteEditor {
       CM.search({ top: true }),
       CM.EditorView.lineWrapping,
       CM.EditorState.readOnly.of(readonly),
+      CM.EditorView.updateListener.of(update => {
+        if (update.docChanged && !readonly) {
+          this._debouncedSave();
+        }
+      }),
     ];
   }
 

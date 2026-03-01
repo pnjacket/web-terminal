@@ -87,6 +87,14 @@ html, body {
   color: #666;
 }
 
+.dot-reconnecting {
+  color: #ff9800;
+}
+
+.dot-disconnected {
+  color: #f44336;
+}
+
 /* ── Buttons ──────────────────────────────────────────── */
 
 .btn {
@@ -359,6 +367,12 @@ html, body {
   padding: 3px 10px;
   font-size: 12px;
   margin-left: 0;
+  flex-shrink: 0;
+}
+
+.status-bar .btn-primary {
+  padding: 3px 10px;
+  font-size: 12px;
   flex-shrink: 0;
 }
 
