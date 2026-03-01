@@ -7,6 +7,7 @@ function makeCMMock() {
     setState: vi.fn(),
   }));
   EditorView.lineWrapping = {};
+  EditorView.updateListener = { of: vi.fn().mockReturnValue({}) };
 
   return {
     EditorState: {
