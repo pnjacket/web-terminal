@@ -162,21 +162,28 @@ export class NoteEditor {
   _updateToolbar() {
     const tab = this._getActiveTab();
     document.getElementById('etn-send').disabled = !tab || tab.readonly;
-    document.getElementById('etn-delete').disabled = !this.data.tabs.some(t => t.readonly);
+    document.getElementById('etn-delete').disabled = !tab || !tab.readonly;
+    document.getElementById('etn-delete-all').disabled = !this.data.tabs.some(t => t.readonly);
   }
 
   _bindToolbar() {
     document.getElementById('etn-send').addEventListener('click', () => this.sendContent());
     document.getElementById('etn-copy').addEventListener('click', () => this.copyContent());
     document.getElementById('etn-export').addEventListener('click', () => this.exportAll());
-    document.getElementById('etn-delete').addEventListener('click', () => this.deleteReadonly());
+    document.getElementById('etn-delete').addEventListener('click', () => this.deleteCurrent());
+    document.getElementById('etn-delete-all').addEventListener('click', () => this.deleteAllReadonly());
 
+    this._confirmAction = null;
     document.getElementById('editor-confirm-cancel').addEventListener('click', () => {
       document.getElementById('editor-confirm').style.display = 'none';
+      this._confirmAction = null;
     });
     document.getElementById('editor-confirm-ok').addEventListener('click', () => {
       document.getElementById('editor-confirm').style.display = 'none';
-      this._doDeleteReadonly();
+      if (this._confirmAction) {
+        this._confirmAction();
+        this._confirmAction = null;
+      }
     });
   }
 
@@ -184,6 +191,7 @@ export class NoteEditor {
     const tab = this._getActiveTab();
     if (!tab || tab.readonly) return;
     const content = this.view.state.doc.toString();
+    if (!content.trim()) return;
     tab.content = content;
     if (typeof window.pasteToTerminal === 'function') {
       window.pasteToTerminal(content);
@@ -194,6 +202,9 @@ export class NoteEditor {
     this._loadActiveTab();
     this._updateToolbar();
     this._save();
+    if (typeof window.focusTerminal === 'function') {
+      window.focusTerminal();
+    }
   }
 
   copyContent() {
@@ -218,11 +229,23 @@ export class NoteEditor {
     URL.revokeObjectURL(url);
   }
 
-  deleteReadonly() {
+  deleteCurrent() {
+    const tab = this._getActiveTab();
+    if (!tab || !tab.readonly) return;
+    document.getElementById('editor-confirm-title').textContent = `Delete tab?`;
+    document.getElementById('editor-confirm-msg').textContent =
+      `This will permanently delete tab '${tab.name}'.`;
+    this._confirmAction = () => this._doDeleteCurrent();
+    document.getElementById('editor-confirm').style.display = 'flex';
+  }
+
+  deleteAllReadonly() {
     const count = this.data.tabs.filter(t => t.readonly).length;
     if (count === 0) return;
+    document.getElementById('editor-confirm-title').textContent = `Delete read-only tabs?`;
     document.getElementById('editor-confirm-msg').textContent =
       `This will permanently delete ${count} read-only tab${count !== 1 ? 's' : ''}.`;
+    this._confirmAction = () => this._doDeleteReadonly();
     document.getElementById('editor-confirm').style.display = 'flex';
   }
 
@@ -235,6 +258,21 @@ export class NoteEditor {
       changes: { from: 0, to: this.view.state.doc.length, insert: newDoc },
     });
     tab.content = newDoc;
+    this._save();
+  }
+
+  _doDeleteCurrent() {
+    const tab = this._getActiveTab();
+    if (!tab || !tab.readonly) return;
+    this.data.tabs = this.data.tabs.filter(t => t.id !== tab.id);
+    if (this.data.tabs.length === 0) {
+      this._createTab();
+    } else {
+      this.data.activeTabId = this.data.tabs[0].id;
+    }
+    this._renderTabs();
+    this._loadActiveTab();
+    this._updateToolbar();
     this._save();
   }
 

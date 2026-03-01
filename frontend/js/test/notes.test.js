@@ -48,8 +48,10 @@ function setupDOM() {
     <button id="etn-copy"></button>
     <button id="etn-export"></button>
     <button id="etn-delete"></button>
+    <button id="etn-delete-all"></button>
     <button id="etn-insert" disabled></button>
     <div id="editor-confirm" style="display:none">
+      <p id="editor-confirm-title"></p>
       <p id="editor-confirm-msg"></p>
       <button id="editor-confirm-cancel"></button>
       <button id="editor-confirm-ok"></button>
@@ -231,6 +233,88 @@ describe('NoteEditor.sendContent', () => {
 
     ed.sendContent();
     expect(paste).not.toHaveBeenCalled();
+  });
+
+  it('does nothing when content is empty or whitespace', () => {
+    const ed = new NoteEditor('sess1', () => 'test');
+    ed._load();
+    const tabCountBefore = ed.data.tabs.length;
+
+    const paste = vi.fn();
+    vi.stubGlobal('pasteToTerminal', paste);
+    ed.view = { state: { doc: { toString: () => '   \n  ' } }, setState: vi.fn() };
+
+    ed.sendContent();
+    expect(paste).not.toHaveBeenCalled();
+    expect(ed.data.tabs).toHaveLength(tabCountBefore);
+  });
+
+  it('calls window.focusTerminal after sending', () => {
+    const ed = new NoteEditor('sess1', () => 'test');
+    ed._load();
+
+    vi.stubGlobal('pasteToTerminal', vi.fn());
+    const focus = vi.fn();
+    vi.stubGlobal('focusTerminal', focus);
+    ed.view = {
+      state: { doc: { toString: () => 'content' } },
+      setState: vi.fn(),
+    };
+
+    ed.sendContent();
+    expect(focus).toHaveBeenCalled();
+  });
+});
+
+describe('NoteEditor._doDeleteCurrent', () => {
+  it('removes only the active readonly tab', () => {
+    const ed = new NoteEditor('sess1', () => 'test');
+    ed.data = {
+      tabs: [
+        { id: '1', name: 'a', content: '', readonly: true, createdAt: 1 },
+        { id: '2', name: 'b', content: '', readonly: false, createdAt: 2 },
+        { id: '3', name: 'c', content: '', readonly: true, createdAt: 3 },
+      ],
+      activeTabId: '1',
+    };
+    ed.view = { setState: vi.fn() };
+
+    ed._doDeleteCurrent();
+
+    expect(ed.data.tabs).toHaveLength(2);
+    expect(ed.data.tabs.find(t => t.id === '1')).toBeUndefined();
+    expect(ed.data.activeTabId).toBe('2');
+  });
+
+  it('does nothing when active tab is editable', () => {
+    const ed = new NoteEditor('sess1', () => 'test');
+    ed.data = {
+      tabs: [
+        { id: '1', name: 'a', content: '', readonly: false, createdAt: 1 },
+        { id: '2', name: 'b', content: '', readonly: true, createdAt: 2 },
+      ],
+      activeTabId: '1',
+    };
+    ed.view = { setState: vi.fn() };
+
+    ed._doDeleteCurrent();
+
+    expect(ed.data.tabs).toHaveLength(2);
+  });
+
+  it('creates a new tab when deleting the last tab', () => {
+    const ed = new NoteEditor('sess1', () => 'test');
+    ed.data = {
+      tabs: [{ id: '1', name: 'a', content: '', readonly: true, createdAt: 1 }],
+      activeTabId: '1',
+    };
+    ed.view = { setState: vi.fn() };
+
+    ed._doDeleteCurrent();
+
+    expect(ed.data.tabs).toHaveLength(1);
+    expect(ed.data.tabs[0].readonly).toBe(false);
+    expect(ed.data.tabs[0].id).not.toBe('1');
   });
 });
 

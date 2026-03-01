@@ -114,6 +114,10 @@ adapter.onData((text) => {
 
 window.getSessionName = () => currentSessionName;
 
+window.focusTerminal = () => {
+  adapter.focus();
+};
+
 window.pasteToTerminal = (text) => {
   if (ws && ws.readyState === WebSocket.OPEN) {
     ws.send(JSON.stringify({ type: 'input', data: btoa(unescape(encodeURIComponent(text))) }));

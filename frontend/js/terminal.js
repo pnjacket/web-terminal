@@ -65,6 +65,12 @@ export class TerminalAdapter {
     }
   }
 
+  focus() {
+    if (this._term) {
+      this._term.focus();
+    }
+  }
+
   dispose() {
     if (this._resizeObserver) {
       this._resizeObserver.disconnect();
