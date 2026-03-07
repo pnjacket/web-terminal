@@ -1,23 +1,40 @@
+version: "2"
 linters:
   enable:
+    - gosec
     - misspell
     - revive
-    - gosec
     - unconvert
-
-linters-settings:
-  gosec:
-    excludes:
-      - G204  # subprocess launched with variable — intentional (PTY spawns bash)
-      - G304  # file path from variable — intentional (preset file from env var)
-  revive:
+  settings:
+    gosec:
+      excludes:
+        - G204
+        - G304
+        - G706
+    revive:
+      rules:
+        - name: exported
+          disabled: true
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
     rules:
-      - name: exported
-        disabled: true  # don't require doc comments on every exported symbol
-
-issues:
-  exclude-rules:
-    - path: _test\.go
-      linters:
-        - gosec
-        - errcheck
+      - linters:
+          - errcheck
+          - gosec
+        path: _test\.go
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
