@@ -593,3 +593,143 @@ html, body {
 ::-webkit-scrollbar-corner {
   background: transparent;
 }
+
+/* ── Editor toggle button ────────────────────────────── */
+
+.editor-toggle-btn {
+  position: fixed;
+  top: 8px;
+  right: 8px;
+  z-index: 50;
+  width: 28px;
+  height: 28px;
+  border: 1px solid #444;
+  border-radius: 4px;
+  background: #2a2a2a;
+  color: #e0e0e0;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.editor-toggle-btn:hover {
+  background: #333;
+}
+
+/* ── Collapsed editor ────────────────────────────────── */
+
+.session-layout.layout-collapsed .resizer,
+.session-layout.layout-collapsed .editor-panel {
+  display: none;
+}
+
+.session-layout.layout-collapsed .terminal-container {
+  flex: 1 1 100%;
+}
+
+/* ── Responsive: mobile (≤768px) ─────────────────────── */
+
+@media (max-width: 768px) {
+  /* Vertical session layout */
+  .session-layout {
+    flex-direction: column;
+  }
+
+  .terminal-container {
+    flex: 0 0 var(--terminal-split-v, 70%);
+    height: auto;
+    min-width: unset;
+    min-height: 10%;
+  }
+
+  .resizer {
+    cursor: row-resize;
+  }
+
+  .editor-panel {
+    height: auto;
+    min-width: unset;
+    min-height: 10%;
+  }
+
+  /* Reorder: 1) editor area, 2) toolbar, 3) tabs */
+  .editor-area { order: 1; }
+  .editor-toolbar { order: 2; flex-wrap: wrap; }
+  .editor-tabs { order: 3; }
+
+  /* Toggle button at bottom-right on mobile */
+  .editor-toggle-btn {
+    top: auto;
+    bottom: 40px;
+  }
+
+  /* Status bar: truncate on narrow screens */
+  .status-bar {
+    padding: 0 8px;
+    gap: 8px;
+  }
+
+  .status-bar-meta {
+    overflow: hidden;
+  }
+
+  /* Landing page: table → cards */
+  .header {
+    padding: 12px 16px;
+  }
+
+  .main {
+    padding: 16px;
+  }
+
+  .sessions-table thead {
+    display: none;
+  }
+
+  .sessions-table,
+  .sessions-table tbody {
+    display: block;
+  }
+
+  .sessions-table tr {
+    display: block;
+    background: #222;
+    border: 1px solid #333;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    padding: 12px;
+  }
+
+  .sessions-table tbody tr:hover {
+    background: #282828;
+  }
+
+  .sessions-table td {
+    display: block;
+    padding: 4px 0;
+    border-bottom: none;
+  }
+
+  .sessions-table td::before {
+    content: attr(data-label);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #888;
+    margin-right: 8px;
+  }
+
+  .sessions-table td:last-child {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #333;
+  }
+
+  .sessions-table td:last-child::before {
+    display: none;
+  }
+}

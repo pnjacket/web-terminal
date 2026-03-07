@@ -37,10 +37,10 @@ async function loadSessions() {
       : '<span class="dot dot-idle" title="Idle">&#9679;</span> idle';
 
     tr.innerHTML = `
-      <td>${escapeHtml(s.name)}</td>
-      <td>${formatRelative(s.created_at)}</td>
-      <td>${formatRelative(s.last_active)}</td>
-      <td>${statusDot}</td>
+      <td data-label="Name">${escapeHtml(s.name)}</td>
+      <td data-label="Created">${formatRelative(s.created_at)}</td>
+      <td data-label="Last Active">${formatRelative(s.last_active)}</td>
+      <td data-label="Status">${statusDot}</td>
       <td>
         <button class="btn btn-connect" data-id="${s.id}">Connect</button>
         <button class="btn btn-kill btn-danger" data-id="${s.id}">Kill</button>

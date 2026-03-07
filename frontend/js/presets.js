@@ -94,9 +94,15 @@ export class PresetPopup {
     if (!this._popup) return;
     const rect = this._btn.getBoundingClientRect();
     this._popup.style.position = 'fixed';
-    this._popup.style.top = (rect.bottom + 4) + 'px';
-    this._popup.style.left = rect.left + 'px';
     this._popup.style.minWidth = Math.max(rect.width, 180) + 'px';
+    this._popup.style.left = rect.left + 'px';
+    if (window.matchMedia('(max-width: 768px)').matches) {
+      this._popup.style.top = 'auto';
+      this._popup.style.bottom = (window.innerHeight - rect.top + 4) + 'px';
+    } else {
+      this._popup.style.top = (rect.bottom + 4) + 'px';
+      this._popup.style.bottom = 'auto';
+    }
   }
 
   _close() {
