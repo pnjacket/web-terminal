@@ -93,6 +93,7 @@ setInterval(loadStatus, 5000);
 const container = document.getElementById('terminal-container');
 const adapter = new TerminalAdapter();
 adapter.attach(container);
+adapter.focus();
 
 // Track the current terminal size so we can resend it after a reconnect.
 let lastSize = null;
@@ -197,33 +198,69 @@ function scheduleReconnect() {
 
 connect();
 
-// Resizable split
+// Resizable split (mouse + touch, horizontal + vertical)
 const resizer = document.getElementById('resizer');
 const layout = document.querySelector('.session-layout');
+const mobileQuery = window.matchMedia('(max-width: 768px)');
 
-resizer.addEventListener('mousedown', (e) => {
-  e.preventDefault();
-  document.body.style.cursor = 'col-resize';
+function startResize() {
+  const vertical = mobileQuery.matches;
+  document.body.style.cursor = vertical ? 'row-resize' : 'col-resize';
   document.body.style.userSelect = 'none';
   resizer.classList.add('dragging');
 
-  function onMouseMove(e) {
+  function onMove(clientX, clientY) {
     const rect = layout.getBoundingClientRect();
-    const pct = ((e.clientX - rect.left) / rect.width) * 100;
-    layout.style.setProperty('--terminal-split', Math.min(Math.max(pct, 15), 85) + '%');
+    if (vertical) {
+      const pct = ((clientY - rect.top) / rect.height) * 100;
+      layout.style.setProperty('--terminal-split-v', Math.min(Math.max(pct, 15), 85) + '%');
+    } else {
+      const pct = ((clientX - rect.left) / rect.width) * 100;
+      layout.style.setProperty('--terminal-split', Math.min(Math.max(pct, 15), 85) + '%');
+    }
   }
 
-  function onMouseUp() {
+  function onMouseMove(e) { onMove(e.clientX, e.clientY); }
+  function onTouchMove(e) { e.preventDefault(); onMove(e.touches[0].clientX, e.touches[0].clientY); }
+
+  function onEnd() {
     document.body.style.cursor = '';
     document.body.style.userSelect = '';
     resizer.classList.remove('dragging');
     document.removeEventListener('mousemove', onMouseMove);
-    document.removeEventListener('mouseup', onMouseUp);
+    document.removeEventListener('mouseup', onEnd);
+    document.removeEventListener('touchmove', onTouchMove);
+    document.removeEventListener('touchend', onEnd);
   }
 
   document.addEventListener('mousemove', onMouseMove);
-  document.addEventListener('mouseup', onMouseUp);
+  document.addEventListener('mouseup', onEnd);
+  document.addEventListener('touchmove', onTouchMove, { passive: false });
+  document.addEventListener('touchend', onEnd);
+}
+
+resizer.addEventListener('mousedown', (e) => { e.preventDefault(); startResize(); });
+resizer.addEventListener('touchstart', (e) => { e.preventDefault(); startResize(); }, { passive: false });
+
+// Editor toggle (collapse / expand)
+const toggleBtn = document.getElementById('editor-toggle');
+
+function updateToggleArrow() {
+  const collapsed = layout.classList.contains('layout-collapsed');
+  if (mobileQuery.matches) {
+    toggleBtn.textContent = collapsed ? '\u25B4' : '\u25BE';
+  } else {
+    toggleBtn.textContent = collapsed ? '\u2039' : '\u203A';
+  }
+}
+
+toggleBtn.addEventListener('click', () => {
+  layout.classList.toggle('layout-collapsed');
+  updateToggleArrow();
 });
+
+mobileQuery.addEventListener('change', updateToggleArrow);
+updateToggleArrow();
 
 window.addEventListener('beforeunload', () => {
   pageUnloading = true;
