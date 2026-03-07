@@ -10,10 +10,18 @@ jobs:
     name: Run CI
     uses: ./.github/workflows/ci.yml
 
+  codeql:
+    name: Run CodeQL
+    uses: ./.github/workflows/codeql.yml
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+
   docker:
     name: Build and push Docker image
     runs-on: ubuntu-latest
-    needs: [ci]
+    needs: [ci, codeql]
     permissions:
       contents: read
       packages: write
