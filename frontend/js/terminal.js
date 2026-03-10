@@ -7,6 +7,8 @@ export class TerminalAdapter {
     this._fitAddon = null;
     this._resizeCallback = null;
     this._resizeObserver = null;
+    this._isAtBottom = true;
+    this._savedViewportY = 0;
   }
 
   attach(element) {
@@ -28,6 +30,10 @@ export class TerminalAdapter {
     this._term.open(element);
     this._fitAddon.fit();
 
+    // Track whether the user's viewport is at the bottom of the buffer.
+    this._term.onScroll(() => this._updateIsAtBottom());
+    this._term.onLineFeed(() => this._updateIsAtBottom());
+
     this._resizeObserver = new ResizeObserver(() => {
       this._fitAddon.fit();
       if (this._resizeCallback) {
@@ -37,9 +43,9 @@ export class TerminalAdapter {
     this._resizeObserver.observe(element);
   }
 
-  write(data) {
+  write(data, callback) {
     if (this._term) {
-      this._term.write(data);
+      this._term.write(data, callback);
     }
   }
 
@@ -68,6 +74,43 @@ export class TerminalAdapter {
   focus() {
     if (this._term) {
       this._term.focus();
+    }
+  }
+
+  _updateIsAtBottom() {
+    if (!this._term) return;
+    const buf = this._term.buffer.active;
+    this._isAtBottom = buf.viewportY >= buf.baseY;
+  }
+
+  get isAtBottom() {
+    return this._isAtBottom;
+  }
+
+  get viewportY() {
+    if (!this._term) return 0;
+    return this._term.buffer.active.viewportY;
+  }
+
+  saveViewportPosition() {
+    if (this._term) {
+      this._savedViewportY = this._term.buffer.active.viewportY;
+    }
+  }
+
+  restoreViewportPosition() {
+    if (this._term) {
+      if (this._isAtBottom) {
+        this._term.scrollToBottom();
+      } else {
+        this._term.scrollToLine(this._savedViewportY);
+      }
+    }
+  }
+
+  scrollToBottom() {
+    if (this._term) {
+      this._term.scrollToBottom();
     }
   }
 

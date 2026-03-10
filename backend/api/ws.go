@@ -100,8 +100,8 @@ func (h *handler) handleWS(w http.ResponseWriter, r *http.Request) {
 			writeMsg(wsMessage{Type: "closed"}) //nolint:errcheck
 			conn.Close()
 		case <-kick:
-			// Displaced by a newer connection — close without a "closed" message
-			// so the client shows the disconnected overlay rather than session-ended.
+			// Displaced by a newer connection — tell the client so it stops reconnecting.
+			writeMsg(wsMessage{Type: "displaced"}) //nolint:errcheck
 			conn.Close()
 		case <-connDone:
 		}

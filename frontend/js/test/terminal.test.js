@@ -10,11 +10,16 @@ describe('TerminalAdapter', () => {
       open: vi.fn(),
       onData: vi.fn(),
       onResize: vi.fn(),
+      onScroll: vi.fn(),
+      onLineFeed: vi.fn(),
       resize: vi.fn(),
       dispose: vi.fn(),
       write: vi.fn(),
+      scrollToBottom: vi.fn(),
+      scrollToLine: vi.fn(),
       cols: 80,
       rows: 24,
+      buffer: { active: { viewportY: 0, baseY: 0 } },
     };
     mockFitAddon = { fit: vi.fn() };
     mockResizeObserver = { observe: vi.fn(), disconnect: vi.fn() };
@@ -46,7 +51,7 @@ describe('TerminalAdapter', () => {
     adapter.attach(document.createElement('div'));
     const data = new Uint8Array([104, 105]);
     adapter.write(data);
-    expect(mockTerm.write).toHaveBeenCalledWith(data);
+    expect(mockTerm.write).toHaveBeenCalledWith(data, undefined);
   });
 
   it('write does nothing before attach', () => {

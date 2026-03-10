@@ -6,6 +6,7 @@ const pathParts = window.location.pathname.split('/');
 const sessionId = pathParts[pathParts.length - 1];
 let currentSessionName = sessionId;
 let sessionEnded = false;
+let sessionDisplaced = false;
 let pageUnloading = false;
 let wsState = 'connected';   // 'connected' | 'reconnecting' | 'disconnected'
 let lastSession = null;
@@ -25,11 +26,13 @@ function renderStatusBar(session) {
     statusDot = '<span class="dot dot-connected" title="Connected">&#9679;</span> connected';
   } else if (wsState === 'reconnecting') {
     statusDot = '<span class="dot dot-reconnecting" title="Reconnecting">&#9679;</span> reconnecting\u2026';
+  } else if (sessionDisplaced) {
+    statusDot = '<span class="dot dot-disconnected" title="Displaced">&#9679;</span> opened in another tab';
   } else {
     statusDot = '<span class="dot dot-disconnected" title="Disconnected">&#9679;</span> disconnected';
   }
 
-  const reconnectBtn = wsState === 'disconnected'
+  const reconnectBtn = wsState === 'disconnected' && !sessionDisplaced
     ? '<button class="btn btn-primary" id="status-reconnect-btn">Reconnect</button>'
     : '';
 
@@ -49,7 +52,7 @@ function renderStatusBar(session) {
     </div>
   `;
 
-  if (wsState === 'disconnected') {
+  if (wsState === 'disconnected' && !sessionDisplaced) {
     document.getElementById('status-reconnect-btn').addEventListener('click', () => {
       location.reload();
     });
@@ -129,6 +132,7 @@ window.pasteToTerminal = (text) => {
 let ws = null;
 let reconnectAttempts = 0;
 let hasConnectedOnce = false;
+let replayDone = false;
 const MAX_RECONNECT = 10;
 
 function connect() {
@@ -138,12 +142,14 @@ function connect() {
   ws.onopen = () => {
     reconnectAttempts = 0;
     setWsState('connected');
-    // On reconnect, clear the terminal before scrollback replay to avoid
-    // duplicating content that is already on screen.
+    // On reconnect, save viewport position then clear the terminal before
+    // scrollback replay to avoid duplicating content that is already on screen.
     if (hasConnectedOnce) {
+      adapter.saveViewportPosition();
       adapter.write('\x1b[H\x1b[2J\x1b[3J');
     }
     hasConnectedOnce = true;
+    replayDone = false;
     // Resend current terminal size so the PTY matches after reconnect.
     if (lastSize) {
       ws.send(JSON.stringify({ type: 'resize', cols: lastSize.cols, rows: lastSize.rows }));
@@ -164,7 +170,17 @@ function connect() {
       for (let i = 0; i < binary.length; i++) {
         bytes[i] = binary.charCodeAt(i);
       }
-      adapter.write(bytes);
+      if (!replayDone) {
+        // First output message after connect is the scrollback replay.
+        // Once xterm finishes processing it, restore the viewport position.
+        replayDone = true;
+        adapter.write(bytes, () => adapter.restoreViewportPosition());
+      } else {
+        adapter.write(bytes);
+      }
+    } else if (msg.type === 'displaced') {
+      sessionDisplaced = true;
+      setWsState('disconnected');
     } else if (msg.type === 'closed') {
       sessionEnded = true;
       document.getElementById('session-ended').style.display = 'flex';
@@ -173,7 +189,7 @@ function connect() {
   };
 
   ws.onclose = () => {
-    if (!sessionEnded && !pageUnloading) {
+    if (!sessionEnded && !sessionDisplaced && !pageUnloading) {
       scheduleReconnect();
     }
   };

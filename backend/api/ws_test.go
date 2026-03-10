@@ -175,13 +175,15 @@ func TestWSClientDisplacement(t *testing.T) {
 	}
 	defer conn2.Close()
 
-	// conn1 should be closed by the server without a "closed" message.
+	// conn1 should receive a "displaced" message before the connection closes.
 	conn1.SetReadDeadline(time.Now().Add(2 * time.Second))
 	var msg wsMsg
 	err = conn1.ReadJSON(&msg)
-	// We expect an error (connection closed). A stray message is also acceptable.
-	if err == nil {
-		t.Logf("conn1 received message after displacement: %q (not a failure)", msg.Type)
+	if err != nil {
+		t.Fatalf("expected displaced message, got error: %v", err)
+	}
+	if msg.Type != "displaced" {
+		t.Fatalf("expected 'displaced' message, got %q", msg.Type)
 	}
 }
 
