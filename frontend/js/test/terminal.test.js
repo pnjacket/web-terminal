@@ -51,7 +51,7 @@ describe('TerminalAdapter', () => {
     adapter.attach(document.createElement('div'));
     const data = new Uint8Array([104, 105]);
     adapter.write(data);
-    expect(mockTerm.write).toHaveBeenCalledWith(data, undefined);
+    expect(mockTerm.write).toHaveBeenCalledWith(data, expect.any(Function));
   });
 
   it('write does nothing before attach', () => {

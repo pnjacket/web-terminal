@@ -9,6 +9,8 @@ export class TerminalAdapter {
     this._resizeObserver = null;
     this._isAtBottom = true;
     this._savedViewportY = 0;
+    this._scrollLock = false;
+    this._scrollLockBtn = null;
   }
 
   attach(element) {
@@ -34,6 +36,15 @@ export class TerminalAdapter {
     this._term.onScroll(() => this._updateIsAtBottom());
     this._term.onLineFeed(() => this._updateIsAtBottom());
 
+    // Scroll-lock button: floating over the terminal container
+    this._scrollLockBtn = document.createElement('button');
+    this._scrollLockBtn.className = 'scroll-lock-btn';
+    this._scrollLockBtn.title = 'Lock scroll to bottom';
+    this._scrollLockBtn.textContent = '\u21E3';
+    this._scrollLockBtn.addEventListener('click', () => this.toggleScrollLock());
+    element.style.position = 'relative';
+    element.appendChild(this._scrollLockBtn);
+
     this._resizeObserver = new ResizeObserver(() => {
       this._fitAddon.fit();
       if (this._resizeCallback) {
@@ -45,7 +56,10 @@ export class TerminalAdapter {
 
   write(data, callback) {
     if (this._term) {
-      this._term.write(data, callback);
+      this._term.write(data, () => {
+        if (this._scrollLock) this._term.scrollToBottom();
+        if (callback) callback();
+      });
     }
   }
 
@@ -112,6 +126,23 @@ export class TerminalAdapter {
     if (this._term) {
       this._term.scrollToBottom();
     }
+  }
+
+  toggleScrollLock(force) {
+    this._scrollLock = force !== undefined ? force : !this._scrollLock;
+    if (this._scrollLockBtn) {
+      this._scrollLockBtn.classList.toggle('active', this._scrollLock);
+      this._scrollLockBtn.title = this._scrollLock
+        ? 'Scroll lock ON (click to unlock)'
+        : 'Lock scroll to bottom';
+    }
+    if (this._scrollLock && this._term) {
+      this._term.scrollToBottom();
+    }
+  }
+
+  get scrollLock() {
+    return this._scrollLock;
   }
 
   dispose() {

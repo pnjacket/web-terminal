@@ -570,6 +570,46 @@ html, body {
   text-align: center;
 }
 
+/* ── Scroll lock button ──────────────────────────────── */
+
+.scroll-lock-btn {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  z-index: 10;
+  width: 28px;
+  height: 28px;
+  border: 1px solid #444;
+  border-radius: 4px;
+  background: rgba(42, 42, 42, 0.8);
+  color: #888;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.5;
+  transition: opacity 0.15s, background 0.15s, color 0.15s;
+}
+
+.scroll-lock-btn:hover {
+  opacity: 1;
+  background: rgba(51, 51, 51, 0.9);
+  color: #e0e0e0;
+}
+
+.scroll-lock-btn.active {
+  opacity: 1;
+  background: rgba(30, 136, 229, 0.8);
+  border-color: #1565c0;
+  color: #fff;
+}
+
+.scroll-lock-btn.active:hover {
+  background: rgba(21, 101, 192, 0.9);
+}
+
 /* ── Scrollbars ───────────────────────────────────────── */
 
 ::-webkit-scrollbar {
